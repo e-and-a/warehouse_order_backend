@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Orders · Warehouse Orders{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Orders</h1>
+    <p>Customer orders and fulfillment status.</p>
+</section>
+
+{% if can_create_orders %}
+<section class="section form-section">
+    <h2>Create order</h2>
+    <form method="post" class="grid-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create order</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="section">
+    <h2>Order list</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Created by</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.customer.name }}</td>
+                    <td><span class="status">{{ order.status }}</span></td>
+                    <td>
+                        {% for item in order.items.all %}
+                        <div>{{ item.product.sku }} x {{ item.quantity }}</div>
+                        {% endfor %}
+                    </td>
+                    <td>{{ order.created_by.email }}</td>
+                    <td>{{ order.updated_at|date:"Y-m-d H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">No orders yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

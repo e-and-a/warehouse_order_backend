@@ -1,0 +1,282 @@
+:root {
+    color-scheme: light;
+    --bg: #f7f8fa;
+    --panel: #ffffff;
+    --text: #1f2933;
+    --muted: #667085;
+    --border: #d9dee7;
+    --accent: #146c5c;
+    --accent-dark: #0f5146;
+    --warning: #b54708;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 14px 32px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.nav {
+    display: flex;
+    flex: 1;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.nav a {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.nav a:hover {
+    color: var(--text);
+}
+
+.logout-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.page {
+    width: min(1180px, calc(100% - 32px));
+    margin: 32px auto;
+}
+
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-header h1,
+.auth-panel h1 {
+    margin: 0 0 8px;
+    font-size: 32px;
+    line-height: 1.2;
+}
+
+.page-header p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.section,
+.auth-panel,
+.metrics article {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.section {
+    padding: 22px;
+    margin-bottom: 24px;
+}
+
+.section h2 {
+    margin: 0 0 16px;
+    font-size: 18px;
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.metrics article {
+    padding: 18px;
+}
+
+.metrics span {
+    display: block;
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.metrics strong {
+    font-size: 30px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+    font-size: 14px;
+}
+
+th {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e7f5ef;
+    color: var(--accent-dark);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.auth-shell {
+    min-height: calc(100vh - 64px);
+    display: grid;
+    place-items: center;
+}
+
+.auth-panel {
+    width: min(420px, 100%);
+    padding: 28px;
+}
+
+.stacked-form,
+.grid-form {
+    display: grid;
+    gap: 12px;
+}
+
+.grid-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-form p,
+.stacked-form p {
+    margin: 0;
+}
+
+.grid-form p {
+    display: grid;
+    gap: 6px;
+}
+
+.grid-form p:has(textarea),
+.grid-form p:has([type="checkbox"]),
+.grid-form ul,
+.grid-form .errorlist,
+.grid-form button {
+    grid-column: 1 / -1;
+}
+
+label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 10px;
+    font: inherit;
+    color: var(--text);
+    background: #fff;
+}
+
+input[type="checkbox"] {
+    width: auto;
+    min-height: auto;
+}
+
+button {
+    border: 0;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    min-height: 40px;
+    padding: 0 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--accent-dark);
+}
+
+.logout-form button {
+    min-height: 34px;
+    background: #eef2f6;
+    color: var(--text);
+}
+
+.messages {
+    margin-bottom: 18px;
+}
+
+.message {
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: #eef7ff;
+    border: 1px solid #b9ddff;
+}
+
+.errorlist {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--warning);
+}
+
+@media (max-width: 760px) {
+    .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 18px;
+    }
+
+    .metrics,
+    .grid-form {
+        grid-template-columns: 1fr;
+    }
+
+    .page {
+        margin: 24px auto;
+    }
+}
