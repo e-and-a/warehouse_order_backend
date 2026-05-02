@@ -15,6 +15,21 @@ def api_client():
     return APIClient()
 
 
+@pytest.fixture(autouse=True)
+def testserver_allowed_host(settings):
+    settings.ALLOWED_HOSTS = [*settings.ALLOWED_HOSTS, "testserver"]
+
+
+@pytest.fixture
+def authenticated_client():
+    def _authenticate(user):
+        api_client = APIClient()
+        api_client.force_authenticate(user=user)
+        return api_client
+
+    return _authenticate
+
+
 @pytest.fixture
 def admin_user(db):
     User = get_user_model()
@@ -48,6 +63,16 @@ def worker_user(db):
 
 
 @pytest.fixture
+def unknown_role_user(db):
+    User = get_user_model()
+    return User.objects.create_user(
+        email="unknown@example.com",
+        password="Unknown123!",
+        role="UNKNOWN",
+    )
+
+
+@pytest.fixture
 def category(db):
     return Category.objects.create(name="Electronics", description="Devices")
 
@@ -64,13 +89,62 @@ def product(category):
 
 
 @pytest.fixture
+def product_factory(category):
+    counter = {"value": 0}
+
+    def _create(**overrides):
+        counter["value"] += 1
+        data = {
+            "name": f"Product {counter['value']}",
+            "sku": f"SKU-{counter['value']:03d}",
+            "description": "Factory product",
+            "price": Decimal("10.00"),
+            "category": category,
+            "is_active": True,
+        }
+        data.update(overrides)
+        return Product.objects.create(**data)
+
+    return _create
+
+
+@pytest.fixture
 def warehouse(db):
     return Warehouse.objects.create(name="Main Warehouse", address="Main street")
 
 
 @pytest.fixture
+def warehouse_factory(db):
+    counter = {"value": 0}
+
+    def _create(**overrides):
+        counter["value"] += 1
+        data = {
+            "name": f"Warehouse {counter['value']}",
+            "address": f"{counter['value']} Storage Avenue",
+        }
+        data.update(overrides)
+        return Warehouse.objects.create(**data)
+
+    return _create
+
+
+@pytest.fixture
 def stock_item(product, warehouse):
     return StockItem.objects.create(product=product, warehouse=warehouse, quantity=10, reserved_quantity=0)
+
+
+@pytest.fixture
+def stock_factory(warehouse):
+    def _create(product, quantity=10, reserved_quantity=0, warehouse_override=None):
+        return StockItem.objects.create(
+            product=product,
+            warehouse=warehouse_override or warehouse,
+            quantity=quantity,
+            reserved_quantity=reserved_quantity,
+        )
+
+    return _create
 
 
 @pytest.fixture
@@ -81,3 +155,21 @@ def customer(db):
         phone="+100000000",
         address="1 Market Street",
     )
+
+
+@pytest.fixture
+def customer_factory(db):
+    counter = {"value": 0}
+
+    def _create(**overrides):
+        counter["value"] += 1
+        data = {
+            "name": f"Client {counter['value']}",
+            "email": f"client-{counter['value']}@example.com",
+            "phone": f"+1000000000{counter['value']}",
+            "address": f"{counter['value']} Market Street",
+        }
+        data.update(overrides)
+        return Customer.objects.create(**data)
+
+    return _create
