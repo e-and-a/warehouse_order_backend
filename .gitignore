@@ -8,3 +8,4 @@ htmlcov/
 staticfiles/
 schema.yml
 db.sqlite3
+*.mmd
