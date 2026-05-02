@@ -1,0 +1,14 @@
+[run]
+source = apps
+omit =
+    */migrations/*
+    */__init__.py
+    */admin.py
+    */apps.py
+    */tests/*
+    manage.py
+
+[report]
+show_missing = True
+skip_covered = False
+fail_under = 100
