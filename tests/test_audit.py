@@ -26,6 +26,20 @@ def test_audit_log_access_admin_only(authenticated_client, admin_user, manager_u
     assert str(log) == f"{AuditAction.CREATE} Manual#1"
 
 
+def test_audit_log_requires_authentication(api_client):
+    response = api_client.get("/api/audit-log/")
+
+    assert response.status_code == 401
+
+
+def test_audit_log_forbidden_for_worker(authenticated_client, worker_user):
+    client = authenticated_client(worker_user)
+
+    response = client.get("/api/audit-log/")
+
+    assert response.status_code == 403
+
+
 def test_log_action_accepts_entity_fields_and_anonymous_user(admin_user):
     log = log_action(AnonymousUser(), AuditAction.UPDATE, entity="Manual", entity_id=7)
 

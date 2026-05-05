@@ -87,6 +87,25 @@ def test_products_template_create_forbidden_for_worker(client, worker_user, cate
     assert not Product.objects.filter(sku="TPL-403").exists()
 
 
+def test_products_template_invalid_form_does_not_create_product(client, manager_user, category):
+    client.force_login(manager_user)
+
+    response = client.post(
+        "/products/",
+        {
+            "name": "",
+            "sku": "",
+            "description": "Invalid",
+            "price": "-1.00",
+            "category": category.id,
+            "is_active": "on",
+        },
+    )
+
+    assert response.status_code == 200
+    assert not Product.objects.filter(description="Invalid").exists()
+
+
 def test_orders_template_create_allowed_for_manager(client, manager_user, stock_item, customer, product):
     client.force_login(manager_user)
 
@@ -141,3 +160,12 @@ def test_worker_products_page_is_read_only(client, worker_user, product):
 
     assert response.status_code == 200
     assert b"Create product" not in response.content
+
+
+def test_orders_page_hides_create_form_for_worker(client, worker_user, stock_item, customer, product):
+    client.force_login(worker_user)
+
+    response = client.get("/orders/")
+
+    assert response.status_code == 200
+    assert b"Create order" not in response.content
