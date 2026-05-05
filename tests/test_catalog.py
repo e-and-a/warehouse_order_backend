@@ -118,6 +118,26 @@ def test_product_create_requires_required_fields(authenticated_client, manager_u
     assert "category" in response.data
 
 
+def test_duplicate_product_sku_returns_400(authenticated_client, manager_user, product, category):
+    client = authenticated_client(manager_user)
+
+    response = client.post(
+        "/api/products/",
+        {
+            "name": "Duplicate SKU",
+            "sku": product.sku,
+            "description": "Duplicate",
+            "price": "10.00",
+            "category": category.id,
+            "is_active": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "sku" in response.data
+
+
 def test_product_serializer_custom_price_validation():
     serializer = ProductSerializer()
 

@@ -206,6 +206,34 @@ def test_stock_services_success_paths(product, warehouse, manager_user):
     assert updated.reserved_quantity == 1
 
 
+def test_worker_can_update_existing_stock_quantities(authenticated_client, worker_user, stock_item):
+    client = authenticated_client(worker_user)
+
+    response = client.patch(
+        f"/api/stock/{stock_item.id}/",
+        {"quantity": 15, "reserved_quantity": 1},
+        format="json",
+    )
+    stock_item.refresh_from_db()
+
+    assert response.status_code == 200
+    assert stock_item.quantity == 15
+    assert stock_item.reserved_quantity == 1
+
+
+def test_stock_update_rejects_reserved_greater_than_quantity(authenticated_client, manager_user, stock_item):
+    client = authenticated_client(manager_user)
+
+    response = client.patch(
+        f"/api/stock/{stock_item.id}/",
+        {"reserved_quantity": stock_item.quantity + 1},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "reserved_quantity" in response.data
+
+
 def test_stock_services_validation_errors(product, product_factory, stock_item, manager_user):
     product_without_stock = product_factory(sku="NO-STOCK")
 
