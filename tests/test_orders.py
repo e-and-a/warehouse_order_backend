@@ -67,6 +67,46 @@ def test_order_create_over_available_stock_returns_400(authenticated_client, man
     assert "items" in response.data
 
 
+def test_order_create_does_not_reserve_stock_until_status_changes(authenticated_client, manager_user, stock_item, customer, product):
+    client = authenticated_client(manager_user)
+
+    response = _create_order_via_api(client, customer, product, quantity=3)
+    stock_item.refresh_from_db()
+
+    assert response.status_code == 201
+    assert stock_item.quantity == 10
+    assert stock_item.reserved_quantity == 0
+
+
+def test_order_create_with_empty_items_returns_400(authenticated_client, manager_user, customer):
+    client = authenticated_client(manager_user)
+
+    response = client.post(
+        "/api/orders/",
+        {"customer": customer.id, "items": []},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "items" in response.data
+
+
+def test_order_create_rejects_invalid_item_quantity_and_price(authenticated_client, manager_user, customer, product):
+    client = authenticated_client(manager_user)
+
+    response = client.post(
+        "/api/orders/",
+        {
+            "customer": customer.id,
+            "items": [{"product": product.id, "quantity": 0, "price": "-1.00"}],
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "items" in response.data
+
+
 def test_order_created_reserved_shipped_flow_updates_stock(authenticated_client, manager_user, stock_item, customer, product):
     client = authenticated_client(manager_user)
     create_response = _create_order_via_api(client, customer, product, quantity=3)
@@ -110,6 +150,23 @@ def test_cancelled_reserved_order_releases_reserve(authenticated_client, manager
 
     assert cancel_response.status_code == 200
     assert cancel_response.data["status"] == OrderStatus.CANCELLED
+    assert stock_item.reserved_quantity == 0
+
+
+def test_cancelled_created_order_does_not_change_stock(authenticated_client, manager_user, stock_item, customer, product):
+    client = authenticated_client(manager_user)
+    create_response = _create_order_via_api(client, customer, product, quantity=4)
+    order_id = create_response.data["id"]
+
+    cancel_response = client.post(
+        f"/api/orders/{order_id}/change-status/",
+        {"status": OrderStatus.CANCELLED},
+        format="json",
+    )
+    stock_item.refresh_from_db()
+
+    assert cancel_response.status_code == 200
+    assert stock_item.quantity == 10
     assert stock_item.reserved_quantity == 0
 
 
@@ -167,6 +224,12 @@ def test_order_permissions_for_worker(authenticated_client, manager_user, worker
     assert worker_list_response.status_code == 200
     assert worker_create_response.status_code == 403
     assert worker_status_response.status_code == 403
+
+
+def test_order_list_requires_authentication(api_client):
+    response = api_client.get("/api/orders/")
+
+    assert response.status_code == 401
 
 
 def test_order_update_destroy_and_status_validation_paths(
@@ -243,6 +306,40 @@ def test_cancelled_order_cannot_be_changed_or_updated(authenticated_client, mana
 
     assert update_response.status_code == 400
     assert status_response.status_code == 400
+
+
+def test_order_reservation_spans_multiple_stock_items(
+    authenticated_client,
+    manager_user,
+    stock_item,
+    warehouse_factory,
+    customer,
+    product,
+):
+    second_warehouse = warehouse_factory(name="Overflow")
+    second_stock = stock_item.__class__.objects.create(
+        product=product,
+        warehouse=second_warehouse,
+        quantity=5,
+        reserved_quantity=0,
+    )
+    stock_item.quantity = 2
+    stock_item.save(update_fields=["quantity"])
+
+    client = authenticated_client(manager_user)
+    create_response = _create_order_via_api(client, customer, product, quantity=4)
+    order_id = create_response.data["id"]
+    reserve_response = client.post(
+        f"/api/orders/{order_id}/change-status/",
+        {"status": OrderStatus.RESERVED},
+        format="json",
+    )
+    stock_item.refresh_from_db()
+    second_stock.refresh_from_db()
+
+    assert reserve_response.status_code == 200
+    assert stock_item.reserved_quantity == 2
+    assert second_stock.reserved_quantity == 2
 
 
 def test_order_serializers_validate_items_quantity_and_price(customer, product, manager_user):
