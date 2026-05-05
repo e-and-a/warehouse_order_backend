@@ -19,6 +19,12 @@ def test_me_endpoint_returns_current_user(authenticated_client, manager_user):
     assert response.data["role"] == UserRole.MANAGER
 
 
+def test_me_endpoint_requires_authentication(api_client):
+    response = api_client.get("/api/users/me/")
+
+    assert response.status_code == 401
+
+
 def test_admin_can_crud_users(authenticated_client, admin_user):
     client = authenticated_client(admin_user)
 
@@ -50,6 +56,38 @@ def test_admin_can_crud_users(authenticated_client, admin_user):
     assert patch_response.status_code == 200
     assert delete_response.status_code == 204
     assert AuditLog.objects.filter(entity="User", action="DELETE").exists()
+
+
+def test_user_api_hashes_password_on_create_and_update(authenticated_client, admin_user):
+    client = authenticated_client(admin_user)
+
+    create_response = client.post(
+        "/api/users/",
+        {
+            "email": "password-check@example.com",
+            "password": "Initial123!",
+            "role": UserRole.MANAGER,
+            "is_active": True,
+            "is_staff": False,
+        },
+        format="json",
+    )
+    user_id = create_response.data["id"]
+    User = get_user_model()
+    user = User.objects.get(pk=user_id)
+
+    assert user.password != "Initial123!"
+    assert user.check_password("Initial123!")
+
+    update_response = client.patch(
+        f"/api/users/{user_id}/",
+        {"password": "Changed123!"},
+        format="json",
+    )
+    user.refresh_from_db()
+
+    assert update_response.status_code == 200
+    assert user.check_password("Changed123!")
 
 
 def test_non_admin_cannot_manage_users(authenticated_client, manager_user):
