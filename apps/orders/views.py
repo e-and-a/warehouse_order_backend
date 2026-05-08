@@ -5,16 +5,18 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.audit.constants import AuditAction
 from apps.audit.services import log_action
+from apps.common.viewsets import ProtectedDestroyMixin
 from apps.orders.models import Customer, Order
 from apps.orders.serializers import CustomerSerializer, OrderSerializer, OrderStatusSerializer
 from apps.orders.services import change_order_status, create_order, delete_order, update_order
 from apps.users.permissions import IsAdminOrManager, IsOrderRolePermission
 
 
-class CustomerViewSet(ModelViewSet):
+class CustomerViewSet(ProtectedDestroyMixin, ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     permission_classes = [IsAdminOrManager]
+    protected_error_message = "Cannot delete this customer because it is linked to existing orders."
 
     def perform_create(self, serializer):
         customer = serializer.save()

@@ -58,6 +58,17 @@ def test_customer_crud_permissions_and_str(authenticated_client, manager_user, w
     assert AuditLog.objects.filter(entity="Customer", action="DELETE").exists()
 
 
+def test_delete_customer_linked_to_order_returns_400(authenticated_client, manager_user, customer):
+    Order.objects.create(customer=customer, created_by=manager_user)
+    client = authenticated_client(manager_user)
+
+    response = client.delete(f"/api/customers/{customer.id}/")
+
+    assert response.status_code == 400
+    assert "linked to existing orders" in response.data["detail"]
+    assert Customer.objects.filter(pk=customer.pk).exists()
+
+
 def test_order_create_over_available_stock_returns_400(authenticated_client, manager_user, stock_item, customer, product):
     client = authenticated_client(manager_user)
 

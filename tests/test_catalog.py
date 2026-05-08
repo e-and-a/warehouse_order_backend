@@ -42,6 +42,16 @@ def test_category_crud_permissions_and_audit(authenticated_client, manager_user,
     assert AuditLog.objects.filter(entity="Category", action="DELETE").exists()
 
 
+def test_delete_category_linked_to_product_returns_400(authenticated_client, manager_user, category, product):
+    client = authenticated_client(manager_user)
+
+    response = client.delete(f"/api/categories/{category.id}/")
+
+    assert response.status_code == 400
+    assert "linked to existing products" in response.data["detail"]
+    assert Category.objects.filter(pk=category.pk).exists()
+
+
 def test_product_crud_permissions_validation_and_str(authenticated_client, manager_user, worker_user, category):
     manager_client = authenticated_client(manager_user)
 
@@ -106,6 +116,16 @@ def test_product_crud_permissions_validation_and_str(authenticated_client, manag
     assert "price" in invalid_price_response.data
     assert delete_response.status_code == 204
     assert AuditLog.objects.filter(entity="Product", action="DELETE").exists()
+
+
+def test_delete_product_linked_to_stock_returns_400(authenticated_client, manager_user, product, stock_item):
+    client = authenticated_client(manager_user)
+
+    response = client.delete(f"/api/products/{product.id}/")
+
+    assert response.status_code == 400
+    assert "linked to stock records or order items" in response.data["detail"]
+    assert Product.objects.filter(pk=product.pk).exists()
 
 
 def test_product_create_requires_required_fields(authenticated_client, manager_user):

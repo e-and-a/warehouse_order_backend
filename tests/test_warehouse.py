@@ -51,6 +51,16 @@ def test_warehouse_crud_permissions_and_str(authenticated_client, manager_user, 
     assert AuditLog.objects.filter(entity="Warehouse", action="DELETE").exists()
 
 
+def test_delete_warehouse_linked_to_stock_returns_400(authenticated_client, manager_user, warehouse, stock_item):
+    client = authenticated_client(manager_user)
+
+    response = client.delete(f"/api/warehouses/{warehouse.id}/")
+
+    assert response.status_code == 400
+    assert "linked to existing stock records" in response.data["detail"]
+    assert Warehouse.objects.filter(pk=warehouse.pk).exists()
+
+
 def test_stock_crud_permissions_and_validations(
     authenticated_client,
     manager_user,

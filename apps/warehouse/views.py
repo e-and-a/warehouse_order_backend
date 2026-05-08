@@ -3,6 +3,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.audit.constants import AuditAction
 from apps.audit.services import log_action
+from apps.common.viewsets import ProtectedDestroyMixin
 from apps.users.constants import UserRole
 from apps.users.permissions import IsAdminManagerOrWorkerReadOnly, IsStockRolePermission
 from apps.warehouse.models import StockItem, Warehouse
@@ -10,10 +11,11 @@ from apps.warehouse.serializers import StockItemSerializer, WarehouseSerializer
 from apps.warehouse.services import update_stock_item
 
 
-class WarehouseViewSet(ModelViewSet):
+class WarehouseViewSet(ProtectedDestroyMixin, ModelViewSet):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
     permission_classes = [IsAdminManagerOrWorkerReadOnly]
+    protected_error_message = "Cannot delete this warehouse because it is linked to existing stock records."
 
     def perform_create(self, serializer):
         warehouse = serializer.save()
