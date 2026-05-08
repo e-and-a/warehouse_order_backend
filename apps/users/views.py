@@ -1,3 +1,6 @@
+from django.db import transaction
+from django.db.models import ProtectedError
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -33,6 +36,23 @@ class UserViewSet(ModelViewSet):
     def perform_update(self, serializer):
         user = serializer.save()
         log_action(self.request.user, AuditAction.UPDATE, user)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            with transaction.atomic():
+                self.perform_destroy(instance)
+        except ProtectedError:
+            return Response(
+                {
+                    "detail": (
+                        "Cannot delete this user because it is linked to existing "
+                        "orders or other protected records."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
         log_action(self.request.user, AuditAction.DELETE, instance)

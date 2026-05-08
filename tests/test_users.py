@@ -2,6 +2,7 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from apps.audit.models import AuditLog
+from apps.orders.models import Order
 from apps.users.constants import UserRole
 from apps.users.permissions import user_has_role
 
@@ -56,6 +57,18 @@ def test_admin_can_crud_users(authenticated_client, admin_user):
     assert patch_response.status_code == 200
     assert delete_response.status_code == 204
     assert AuditLog.objects.filter(entity="User", action="DELETE").exists()
+
+
+def test_delete_user_linked_to_order_returns_400(authenticated_client, admin_user, manager_user, customer):
+    Order.objects.create(customer=customer, created_by=manager_user)
+    client = authenticated_client(admin_user)
+
+    response = client.delete(f"/api/users/{manager_user.id}/")
+
+    assert response.status_code == 400
+    assert "detail" in response.data
+    assert "linked to existing orders" in response.data["detail"]
+    assert get_user_model().objects.filter(pk=manager_user.pk).exists()
 
 
 def test_user_api_hashes_password_on_create_and_update(authenticated_client, admin_user):
